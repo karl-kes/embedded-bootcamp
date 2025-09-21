@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -87,7 +89,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_SPI1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
   /* USER CODE END 2 */
 
@@ -95,6 +100,33 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	// SPI command to use single ended channel 1.
+	uint8_t transmit[3] = {0b1, (0b10010000), 0};
+	uint8_t receive[3] = {0};
+
+	// Starts SPI by pulling low.
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+
+	// Send and receive 3 bytes.
+	HAL_SPI_TransmitReceive(&hspi1, transmit, receive, 3, HAL_MAX_DELAY);
+
+	// Ends SPI by pulling high.
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+
+	// Extracts the 10 bit value from bytes.
+	// Receive[1] has the 2 MSBs so mask it and shift the last 2 by 8 bits.
+	// Combine with receive[2].
+	uint16_t data = ((receive[1] & 0b11)<< 8) | receive[2];
+
+	// 10 bit so data max is 1023.
+	// Covert by dividing by 1023 then multiply 3200 to put in range of 3200-6400. (1-2ms).
+	uint16_t pwm = (uint16_t)((float)data / 1023.f * 3200.f) + 3200;
+
+	// Set pwm duty cycle for servo.
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm);
+
+	// Waits 10ms to prevent overload.
+	HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
