@@ -119,7 +119,7 @@ int main(void)
 
 	// 10 bit so data max is 1023.
 	// Covert by dividing by 1023 then multiply 3200 to put in range of 3200-6400. (1-2ms).
-	uint16_t pwm = (data / 1023.f * 3200.f) + 3200;
+	uint16_t pwm = ((data * 3200) / 1023) + 3200;
 
 	// Set pwm duty cycle for servo.
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm);
