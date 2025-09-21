@@ -68,6 +68,10 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+  // SPI command to use single ended channel 1.
+  uint8_t transmit[3] = {0x01, 0x90, 0x00};
+  uint8_t receive[3] = {0x00};
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -93,17 +97,12 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	// SPI command to use single ended channel 1.
-	uint8_t transmit[3] = {0b1, (0b10010000), 0};
-	uint8_t receive[3] = {0};
-
 	// Starts SPI by pulling low.
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
 
@@ -120,7 +119,7 @@ int main(void)
 
 	// 10 bit so data max is 1023.
 	// Covert by dividing by 1023 then multiply 3200 to put in range of 3200-6400. (1-2ms).
-	uint16_t pwm = (uint16_t)((float)data / 1023.f * 3200.f) + 3200;
+	uint16_t pwm = (data / 1023.f * 3200.f) + 3200;
 
 	// Set pwm duty cycle for servo.
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm);
